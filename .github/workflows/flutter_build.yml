@@ -34,7 +34,7 @@ jobs:
 
     - name: Upload APK to FTP
       run: |
-        lftp -e "set ssl:verify-certificate no; put -O /path/to/remote/directory ./build/app/outputs/flutter-apk/app-release.apk; exit" -u '${{ secrets.FTP_USERNAME }}','${{ secrets.FTP_PASSWORD }}' ${{ secrets.FTP_SERVER }} || exit 1
+        lftp -e "set ftp:ssl-allow no; put -O /path/to/remote/directory ./build/app/outputs/flutter-apk/app-release.apk; exit" -u '${{ secrets.FTP_USERNAME }}','${{ secrets.FTP_PASSWORD }}' ftp://${{ secrets.FTP_SERVER }} || exit 1
 
     - name: Get Filename from FTP
       id: get-filename
