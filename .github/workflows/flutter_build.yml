@@ -1,0 +1,53 @@
+name: Flutter CI/CD
+
+on:
+  push:
+    branches:
+      - '*'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v2
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '16'
+
+    - name: Set up Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: '3.10.6'  # adjust to your Flutter version
+
+    - name: Install dependencies
+      run: flutter pub get
+
+    - name: Build APK
+      run: flutter build apk
+
+    - name: Upload APK to FTP
+      run: |
+        lftp -e "set ssl:verify-certificate no; put -O /path/to/remote/directory ./build/app/outputs/flutter-apk/app-release.apk; exit" -u '${{ secrets.FTP_USERNAME }}','${{ secrets.FTP_PASSWORD }}' ${{ secrets.FTP_SERVER }} || exit 1
+
+    - name: Get Filename from FTP
+      id: get-filename
+      run: |
+        filename=$(lftp -c "set ssl:verify-certificate no; ls /path/to/remote/directory" -u ${{ secrets.FTP_USERNAME }}'","'${{ secrets.FTP_PASSWORD }}' ${{ secrets.FTP_SERVER }} | grep app-release.apk | awk '{print \$9}') || exit 1
+        echo "::set-output name=filename::${filename}"
+
+    - name: Send FTP Link to Email
+      uses: dawidd6/action-send-mail@v3
+      with:
+        server_address: premium57.web-hosting.com
+        server_port: 465
+        username: ${{ secrets.EMAIL_USERNAME }}
+        password: ${{ secrets.EMAIL_PASSWORD }}
+        subject: 'New APK Build'
+        body: "Download the latest APK build from the FTP server:\n\nFilename: ${{ steps.get-filename.outputs.filename }}"
+        to: kamalkishorkumar614@gmail.com
+        from : main@techkamal.site
+        priority: high
